@@ -68,7 +68,7 @@ runs:
     - name: Determine File To Build
       shell: bash
       run: |
-        if [ "`ls -A | grep -i \\.xcworkspace\$`" ]; then filetype_parameter="workspace" \
+        if [[ "`ls -A | grep -i \\.xcworkspace\$`" ]]; then filetype_parameter="workspace" \
         && file_to_build="`ls -A | grep -i \\.xcworkspace\$`"; \
         else filetype_parameter="project" && file_to_build="`ls -A | grep -i \\.xcodeproj\$`"; fi
         file_to_build=`echo $file_to_build | awk '{$1=$1;print}'`
@@ -78,7 +78,7 @@ runs:
     - name: Grab Default Scheme 
       shell: bash
       run: |
-        if [ ${{ github.event.inputs.scheme }} == '' ]; then
+        if [[ ${{ github.event.inputs.scheme }} == '' ]]; then
           scheme_list=$(xcodebuild -list -json | tr -d "\n")
           scheme=$(echo $scheme_list | ruby -e "require 'json'; puts JSON.parse(STDIN.gets)['project']['targets'][0]")
           echo $scheme | cat >scheme
