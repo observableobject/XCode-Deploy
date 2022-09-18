@@ -48,9 +48,9 @@ runs:
     - name: Sanitize input
       shell: bash
       env:
-        SCHEME: ${{ github.event.inputs.scheme }}
-        CONFIGURATION: ${{ github.event.inputs.configuration }}
-        PATH_TO_EXPORT_OPTIONS: ${{ github.event.inputs.path-to-export-options }}
+        SCHEME: ${{ inputs.scheme }}
+        CONFIGURATION: ${{ inputs.configuration }}
+        PATH_TO_EXPORT_OPTIONS: ${{ inputs.path-to-export-options }}
       run: |
         if [[ "$SCHEME" == ${SCHEME//[^a-zA-Z0-9_.- ]/} ]] && \
         [[ "$CONFIGURATION" == ${CONFIGURATION//[^a-zA-Z0-9_.- ]/} ]] && \
@@ -78,26 +78,26 @@ runs:
     - name: Grab Default Scheme 
       shell: bash
       run: |
-        if [[ ${{ github.event.inputs.scheme }} == '' ]]; then
+        if [[ ${{ inputs.scheme }} == '' ]]; then
           scheme_list=$(xcodebuild -list -json | tr -d "\n")
           scheme=$(echo $scheme_list | ruby -e "require 'json'; puts JSON.parse(STDIN.gets)['project']['targets'][0]")
           echo $scheme | cat >scheme
           echo Using default scheme: $scheme
         else 
-          scheme=${{ github.event.inputs.scheme }}
+          scheme=${{ inputs.scheme }}
         fi
         echo "SCHEME=$scheme" >> $GITHUB_ENV
     - name: Import Certificates
       uses: apple-actions/import-codesign-certs@v1
       id: codesign
       with:
-        p12-file-base64: ${{ github.events.inputs.distribution-certificate-p12 }}
-        p12-password: ${{ github.events.inputs.distribution-certificate-password }}
+        p12-file-base64: ${{ inputs.distribution-certificate-p12 }}
+        p12-password: ${{ inputs.distribution-certificate-password }}
         keychain: codesign
     - name: Install App Store Profile
       uses: akiojin/install-provisioning-profile-github-action@v1.0
       with:
-        base64: ${{ github.events.inputs.app-store-provisioning-profile }}
+        base64: ${{ inputs.app-store-provisioning-profile }}
     - name: Select Xcode
       shell: bash
       run: |
@@ -106,7 +106,7 @@ runs:
     - name: Increment Build Number
       shell: bash
       run: |
-        if ${{ github.event.inputs.update-build }}; then
+        if ${{ inputs.update-build }}; then
           count=`git rev-list --count HEAD`
           xcrun agvtool new-version -all $count
         fi
@@ -121,28 +121,28 @@ runs:
           -archivePath ${{ env.PROJECT_NAME }}.xcarchive
         derived-data-path: build/derivedData
         destination: generic/platform=iOS
-        configuration: ${{ github.event.inputs.configuration }}
+        configuration: ${{ inputs.configuration }}
     - name: Get App Store Connect API Key 
       uses: timheuer/base64-to-file@v1.1
       with:
-        fileName: AuthKey_${{ github.events.inputs.auth-key-id }}.p8
+        fileName: AuthKey_${{ inputs.auth-key-id }}.p8
         fileDir: ${{ github.workspace }}/private_keys
-        encodedString: ${{ github.events.inputs.auth-key-p8 }}
+        encodedString: ${{ inputs.auth-key-p8 }}
     - name: Export Xcode archive
       shell: bash
       run: |
         xcodebuild -exportArchive -verbose \
         -sdk iphoneos \
         -archivePath ${{ github.workspace }}/${{ env.PROJECT_NAME }}.xcarchive  \
-        -exportOptionsPlist ${{ github.workspace }}/${{ github.event.inputs.path-to-export-options }} \
-        -exportPath ${{ github.workspace }} \          -authenticationKeyIssuerID ${{ github.events.inputs.auth-key-issuer-id }} \
-        -authenticationKeyID ${{ github.events.inputs.auth-key-id }} \
-        -authenticationKeyPath ${{ github.workspace }}/private_keys/AuthKey_${{ github.events.inputs.auth-key-id }}.p8 \
+        -exportOptionsPlist ${{ github.workspace }}/${{ inputs.path-to-export-options }} \
+        -exportPath ${{ github.workspace }} \          -authenticationKeyIssuerID ${{ inputs.auth-key-issuer-id }} \
+        -authenticationKeyID ${{ inputs.auth-key-id }} \
+        -authenticationKeyPath ${{ github.workspace }}/private_keys/AuthKey_${{ inputs.auth-key-id }}.p8 \
     - name: Upload to App Store Connect
       shell: bash
       run: |
         xcrun altool --upload-app -f ${{ github.workspace }}/${{ env.PROJECT_NAME }}.ipa -t iOS \
-        --apiIssuer ${{ github.events.inputs.auth-key-issuer-id }} --apiKey ${{ github.events.inputs.auth-key-id }}
+        --apiIssuer ${{ inputs.auth-key-issuer-id }} --apiKey ${{ inputs.auth-key-id }}
     - name: Cleanup 
       shell: bash
       run: |
