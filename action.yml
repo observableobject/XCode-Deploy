@@ -1,0 +1,150 @@
+name: 'XCode-Deploy'
+description: 'Archive, Export, and Upload a build to App Store Connect (TestFlight)'
+author: 'Vincent Frascello'
+
+inputs:
+  configuration: 
+    description: 'Configuration (default: Release)'
+    required: true
+    default: 'Release'
+  scheme: 
+    description: 'Leave blank and Action will search for default scheme.'
+    required: false
+    default: ''
+  path-to-export-options:
+    description: 'Relative path and filename to ExportOptions.plist'
+    required: true
+    default: 'ExportOptions.plist'
+  update-build: 
+    description: 'Sets Build Number to # of commits.'
+    required: true
+    default: true
+    type: choice
+    options:
+    - true
+    - false
+  distribution-certificate-p12:
+    description: 'base64 representation of the distribution certificate.'
+    required: true
+  distribution-certificate-password:
+    description: 'password to unlock the distribution certificate.'
+    required: true
+  app-store-provisioning-profile:
+    description: 'base64 representation of the provisioning profile.'
+    required: true    
+  auth-key-id:
+    description: 'App Store Connect API Auth Key ID.'
+    required: true
+  auth-key-issuer-id:
+    description: 'App Store Connect API Issuer ID.'
+    required: true
+  auth-key-p8:
+    description: 'base64 representation of the App Store Connect AuthKey.'
+    required: true
+
+runs: 
+  using: 'composite'
+  steps:
+    - name: Sanitize input
+      shell: bash
+      env:
+        SCHEME: ${{ github.event.inputs.scheme }}
+        CONFIGURATION: ${{ github.event.inputs.configuration }}
+        PATH_TO_EXPORT_OPTIONS: ${{ github.event.inputs.path-to-export-options }}
+      run: |
+        if [[ "$SCHEME" == ${SCHEME//[^a-zA-Z0-9_.- ]/} ]] && \
+        [[ "$CONFIGURATION" == ${CONFIGURATION//[^a-zA-Z0-9_.- ]/} ]] && \
+        [[ "$PATH_TO_EXPORT_OPTIONS" == ${PATH_TO_EXPORT_OPTIONS//[^a-zA-Z0-9_.- ]/} ]]; then
+        echo "Inputs OK"
+          exit 0
+          else
+          echo "Bad Inputs"
+        exit 1
+        fi
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Determine File To Build
+      shell: bash
+      run: |
+        if [ "`ls -A | grep -i \\.xcworkspace\$`" ]; then filetype_parameter="workspace" \
+        && file_to_build="`ls -A | grep -i \\.xcworkspace\$`"; \
+        else filetype_parameter="project" && file_to_build="`ls -A | grep -i \\.xcodeproj\$`"; fi
+        file_to_build=`echo $file_to_build | awk '{$1=$1;print}'`
+        echo "TYPE=$filetype_parameter" >> $GITHUB_ENV
+        echo "FILE_TO_BUILD=$file_to_build" >> $GITHUB_ENV
+        echo "PROJECT_NAME=$(echo "$file_to_build" | cut -f 1 -d '.')" >> $GITHUB_ENV
+    - name: Grab Default Scheme 
+      shell: bash
+      run: |
+        if [ ${{ github.event.inputs.scheme }} == '' ]; then
+          scheme_list=$(xcodebuild -list -json | tr -d "\n")
+          scheme=$(echo $scheme_list | ruby -e "require 'json'; puts JSON.parse(STDIN.gets)['project']['targets'][0]")
+          echo $scheme | cat >scheme
+          echo Using default scheme: $scheme
+        else 
+          scheme=${{ github.event.inputs.scheme }}
+        fi
+        echo "SCHEME=$scheme" >> $GITHUB_ENV
+    - name: Import Certificates
+      uses: apple-actions/import-codesign-certs@v1
+      id: codesign
+      with:
+        p12-file-base64: ${{ github.events.inputs.distribution-certificate-p12 }}
+        p12-password: ${{ github.events.inputs.distribution-certificate-password }}
+        keychain: codesign
+    - name: Install App Store Profile
+      uses: akiojin/install-provisioning-profile-github-action@v1.0
+      with:
+        base64: ${{ github.events.inputs.app-store-provisioning-profile }}
+    - name: Select Xcode
+      shell: bash
+      run: |
+        # needed until September 26 when 14 becomes default
+        sudo xcode-select --switch /Applications/Xcode_14.0.app
+    - name: Increment Build Number
+      shell: bash
+      run: |
+        if ${{ github.event.inputs.update-build }}; then
+          count=`git rev-list --count HEAD`
+          xcrun agvtool new-version -all $count
+        fi
+    - name: Build and Archive
+      uses: sersoft-gmbh/xcodebuild-action@v2
+      with:
+        action: archive
+        ${{ env.TYPE }}: ${{ env.FILE_TO_BUILD }}
+        scheme: ${{ env.SCHEME }}
+        sdk: iphoneos
+        build-settings: >
+          -archivePath ${{ env.PROJECT_NAME }}.xcarchive
+        derived-data-path: build/derivedData
+        destination: generic/platform=iOS
+        configuration: ${{ github.event.inputs.configuration }}
+    - name: Get App Store Connect API Key 
+      uses: timheuer/base64-to-file@v1.1
+      with:
+        fileName: AuthKey_${{ github.events.inputs.auth-key-id }}.p8
+        fileDir: ${{ github.workspace }}/private_keys
+        encodedString: ${{ github.events.inputs.auth-key-p8 }}
+    - name: Export Xcode archive
+      shell: bash
+      run: |
+        xcodebuild -exportArchive -verbose \
+        -sdk iphoneos \
+        -archivePath ${{ github.workspace }}/${{ env.PROJECT_NAME }}.xcarchive  \
+        -exportOptionsPlist ${{ github.workspace }}/${{ github.event.inputs.path-to-export-options }} \
+        -exportPath ${{ github.workspace }} \          -authenticationKeyIssuerID ${{ github.events.inputs.auth-key-issuer-id }} \
+        -authenticationKeyID ${{ github.events.inputs.auth-key-id }} \
+        -authenticationKeyPath ${{ github.workspace }}/private_keys/AuthKey_${{ github.events.inputs.auth-key-id }}.p8 \
+    - name: Upload to App Store Connect
+      shell: bash
+      run: |
+        xcrun altool --upload-app -f ${{ github.workspace }}/${{ env.PROJECT_NAME }}.ipa -t iOS \
+        --apiIssuer ${{ secrets.AUTH_KEY_ISSUER_ID }} --apiKey ${{ github.events.inputs.auth-key-id }}
+    - name: Cleanup 
+      shell: bash
+      run: |
+        security delete-keychain codesign.keychain
+        rm  -rf ${{ github.workspace }}/private_keys || true
