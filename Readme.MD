@@ -1,4 +1,4 @@
-# XCode-Deploy 1.0
+# XCode-Deploy 1.11
 This action will archive, export, and upload your project or workspace to App Store Connect (TestFlight). 
 It is designed to run on a containerized VM, such as a GitHub Hosted Runner.
 If self-hosting, some of these steps may be unnecessary or redundant. 
@@ -50,7 +50,8 @@ You can generate one of these by doing a local export in XCode and then copy it 
 
 ## Sample Usage
 ```yml
-- uses: vfrascello/xcode-deploy@v1.0
+- name: Deploy
+  uses: vfrascello/xcode-deploy@v1.11
   with:
     configuration: 'Release'
     scheme: 'MyScheme'
@@ -71,8 +72,11 @@ See [action.yml][0] for more details.
 This composite action was written by me, Vincent Frascello, but uses actions by other open-source contributors: 
 
 [Oliver Jones][1]
+
 [Florian Fried][2]
+
 [Akio Jinsenji][3]
+
 [Github Actions Team][4]
 
 ## License
