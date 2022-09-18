@@ -51,7 +51,7 @@ You can generate one of these by doing a local export in XCode and then copy it 
 ## Sample Usage
 ```yml
 - name: Deploy
-  uses: vfrascello/xcode-deploy@v1.0
+  uses: vfrascello/xcode-deploy@v1.01
   with:
     configuration: 'Release'
     scheme: 'MyScheme'
