@@ -61,10 +61,10 @@ runs:
     #       echo "Bad Inputs"
     #     exit 1
     #     fi
-    # - name: Checkout
-    #   uses: actions/checkout@v3
-    #   with:
-    #     fetch-depth: 0
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: Determine File To Build
       shell: bash
       run: |
