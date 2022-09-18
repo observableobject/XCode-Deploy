@@ -52,7 +52,7 @@ runs:
         CONFIGURATION: ${{ inputs.configuration }}
         PATH_TO_EXPORT_OPTIONS: ${{ inputs.path-to-export-options }}
       run: |
-        if [[ "$SCHEME" == ${SCHEME//[^a-zA-Z0-9_.- ]/} ]] && \
+        if [[ "$SCHEME" == ${SCHEME//[^a-zA-Z0-9_.- ]/} || "$SCHEME" == "" ]] && \
         [[ "$CONFIGURATION" == ${CONFIGURATION//[^a-zA-Z0-9_.- ]/} ]] && \
         [[ "$PATH_TO_EXPORT_OPTIONS" == ${PATH_TO_EXPORT_OPTIONS//[^a-zA-Z0-9_.- ]/} ]]; then
         echo "Inputs OK"
