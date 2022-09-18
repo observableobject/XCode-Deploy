@@ -50,7 +50,8 @@ You can generate one of these by doing a local export in XCode and then copy it 
 
 ## Sample Usage
 ```yml
-- uses: vfrascello/xcode-deploy@v1.0
+- name: Deploy
+  uses: vfrascello/xcode-deploy@v1.0
   with:
     configuration: 'Release'
     scheme: 'MyScheme'
@@ -71,8 +72,11 @@ See [action.yml][0] for more details.
 This composite action was written by me, Vincent Frascello, but uses actions by other open-source contributors: 
 
 [Oliver Jones][1]
+
 [Florian Fried][2]
+
 [Akio Jinsenji][3]
+
 [Github Actions Team][4]
 
 ## License
