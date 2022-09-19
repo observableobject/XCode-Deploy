@@ -1,13 +1,17 @@
-# XCode-Deploy 1.3
+# XCode-Deploy 1.4
 This action will archive, export, and upload your project or workspace to App Store Connect (TestFlight). 
 It is designed to run on a containerized VM, such as a GitHub Hosted Runner.
 If self-hosting, some of these steps may be unnecessary or redundant. 
 
 ## Inputs
 
+### `xcode-version`
+
+The version of XCode to use, in SemVer. Default is latest stable release: `xcode-latest`. See also [setup-xcode][0].
+
 ### `configuration`
 
-The configuration to archive. Default is `'Release`. See also `xcodebuild`'s `-configuration`. 
+The configuration to archive. Default is `Release`. See also `xcodebuild`'s `-configuration`. 
 
 ### `scheme`
 
@@ -51,8 +55,9 @@ You can generate one of these by doing a local export in XCode and then copy it 
 ## Sample Usage
 ```yml
 - name: Deploy
-  uses: vfrascello/xcode-deploy@v1.3
+  uses: vfrascello/xcode-deploy@v1.4
   with:
+    xcode-version: '14.0'
     configuration: 'Release'
     scheme: 'MyScheme'
     path-to-export-options: 'ExportOptions.plist'
@@ -65,26 +70,27 @@ You can generate one of these by doing a local export in XCode and then copy it 
     auth-key-p8: ${{ secrets.AUTH_KEY_P8 }}
 ```
 
-See [action.yml][0] for more details.
+See [action.yml][1] for more details.
 
 ## Contributions
 
 This composite action was written by me, Vincent Frascello, but uses actions by other open-source contributors: 
 
-[Oliver Jones][1]
+[Oliver Jones][2]
 
-[Florian Fried][2]
+[Florian Fried][3]
 
-[Akio Jinsenji][3]
+[Akio Jinsenji][4]
 
-[Github Actions Team][4]
+[Github Actions Team][5]
 
 ## License
-Any contributions made under this project will be governed by the [MIT License][5].
+Any contributions made under this project will be governed by the [MIT License][6].
 
-[0]: https://github.com/vfrascello/xcode-deploy/blob/main/action.yml
-[1]: https://github.com/orj
-[2]: https://github.com/ffried
-[3]: https://github.com/akiojin
-[4]: https://github.com/actions
-[5]: https://github.com/vfrascello/xcode-deploy/blob/main/LICENSE
+[0]: https://github.com/maxim-lobanov/setup-xcode
+[1]: https://github.com/vfrascello/xcode-deploy/blob/main/action.yml
+[2]: https://github.com/orj
+[3]: https://github.com/ffried
+[4]: https://github.com/akiojin
+[5]: https://github.com/actions
+[6]: https://github.com/vfrascello/xcode-deploy/blob/main/LICENSE

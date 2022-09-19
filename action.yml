@@ -6,6 +6,10 @@ branding:
   color: 'yellow'
   
 inputs:
+  xcode-version: 
+    description: 'The version of XCode to use. Defaults to the latest stable version.'
+    requred: false
+    default: 'latest-stable'
   configuration: 
     description: 'Configuration (default: Release)'
     required: true
@@ -55,6 +59,7 @@ runs:
         CONFIGURATION: ${{ inputs.configuration }}
         PATH_TO_EXPORT_OPTIONS: ${{ inputs.path-to-export-options }}
       run: |
+        echo "[XCode-Deploy]: Checking Input for invalid characters..."
         if [[ "$SCHEME" == ${SCHEME//[^a-zA-Z0-9_\.- ]/} ]] && \
         [[ "$CONFIGURATION" == ${CONFIGURATION//[^a-zA-Z0-9_\.- ]/} ]] && \
         [[ "$PATH_TO_EXPORT_OPTIONS" == ${PATH_TO_EXPORT_OPTIONS//^[a-zA-Z0-9](?:[a-zA-Z0-9 ._-]*[a-zA-Z0-9])?\.[a-zA-Z0-9_-]+$/} ]]; then
@@ -71,6 +76,7 @@ runs:
     - name: Determine File To Build
       shell: bash
       run: |
+        echo "[XCode-Deploy]: Determining file to build..."
         if [ "`ls -A | grep -i \\.xcworkspace\$`" ]; then filetype_parameter="workspace" \
         && file_to_build="`ls -A | grep -i \\.xcworkspace\$`"; \
         else filetype_parameter="project" && file_to_build="`ls -A | grep -i \\.xcodeproj\$`"; fi
@@ -78,15 +84,17 @@ runs:
         echo "TYPE=$filetype_parameter" >> $GITHUB_ENV
         echo "FILE_TO_BUILD=$file_to_build" >> $GITHUB_ENV
         echo "PROJECT_NAME=$(echo "$file_to_build" | cut -f 1 -d '.')" >> $GITHUB_ENV
-    - name: Grab Default Scheme 
+    - name: Setup Scheme
       shell: bash
       run: |
+        echo "[XCode-Deploy]: Searching for default Scheme..."
         if [ "${{ inputs.scheme }}" == "" ]; then
           scheme_list=$(xcodebuild -list -json | tr -d "\n")
           scheme=$(echo $scheme_list | ruby -e "require 'json'; puts JSON.parse(STDIN.gets)['project']['targets'][0]")
           echo $scheme | cat >scheme
-          echo Using default scheme: $scheme
+          echo "[XCode-Deploy]: Using default scheme: $scheme..."
         else 
+          echo "[XCode-Deploy]: Using provided Scheme: ${{ inputs.scheme }}"
           scheme=${{ inputs.scheme }}
         fi
         echo "SCHEME=$scheme" >> $GITHUB_ENV
@@ -102,14 +110,14 @@ runs:
       with:
         base64: ${{ inputs.app-store-provisioning-profile }}
     - name: Select Xcode
-      shell: bash
-      run: |
-        # needed until September 26 when 14 becomes default
-        sudo xcode-select --switch /Applications/Xcode_14.0.app
+    - uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '14.0'
     - name: Increment Build Number
       shell: bash
       run: |
         if ${{ inputs.update-build }}; then
+          echo "[XCode-Deploy]: Updating Build Number to commit depth..."
           count=`git rev-list --count HEAD`
           xcrun agvtool new-version -all $count
         fi
@@ -134,6 +142,7 @@ runs:
     - name: Export Xcode archive
       shell: bash
       run: |
+        echo "[XCode-Deploy]: Exporting archive using xcodebuild..."
         xcodebuild -exportArchive -verbose \
         -sdk iphoneos \
         -archivePath ${{ github.workspace }}/${{ env.PROJECT_NAME }}.xcarchive  \
@@ -144,10 +153,12 @@ runs:
     - name: Upload to App Store Connect
       shell: bash
       run: |
+        echo "[XCode-Deploy]: Uploading archive using altool..."
         xcrun altool --upload-app -f ${{ github.workspace }}/${{ env.PROJECT_NAME }}.ipa -t iOS \
         --apiIssuer ${{ inputs.auth-key-issuer-id }} --apiKey ${{ inputs.auth-key-id }}
     - name: Cleanup 
       shell: bash
       run: |
+        echo "[XCode-Deploy]: Removing Keychain and private_keys folder..."
         security delete-keychain codesign.keychain
         rm  -rf ${{ github.workspace }}/private_keys || true
