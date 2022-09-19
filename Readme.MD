@@ -76,6 +76,8 @@ See [action.yml][1] for more details.
 
 This composite action was written by me, Vincent Frascello, but uses actions by other open-source contributors: 
 
+[Maxim Lobanov][0]
+
 [Oliver Jones][2]
 
 [Florian Fried][3]
