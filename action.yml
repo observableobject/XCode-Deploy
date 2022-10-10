@@ -104,7 +104,7 @@ runs:
       if: ${{ inputs.install-pods }}
       shell: bash
       run: |
-        bundle exec pod install
+        pod install
     - name: Resolve Package Dependencies
       if: ${{ inputs.resolve-package-dependencies }}
       shell: bash
