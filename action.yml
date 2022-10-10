@@ -30,6 +30,22 @@ inputs:
     options:
     - true
     - false
+  install-pods: 
+    description: 'Run Pod Install'
+    required: true
+    default: false
+    type: choice
+    options:
+    - true
+    - false
+  resolve-package-dependencies: 
+    description: 'Resolve Package Dependencies'
+    required: true
+    default: false
+    type: choice
+    options:
+    - true
+    - false
   distribution-certificate-p12:
     description: 'base64 representation of the distribution certificate.'
     required: true
@@ -84,6 +100,18 @@ runs:
         echo "TYPE=$filetype_parameter" >> $GITHUB_ENV
         echo "FILE_TO_BUILD=$file_to_build" >> $GITHUB_ENV
         echo "PROJECT_NAME=$(echo "$file_to_build" | cut -f 1 -d '.')" >> $GITHUB_ENV
+    - name: Setup Pods
+      if: inputs.install-pods == 'true'
+      shell: bash
+      run: |
+        echo "[XCode-Deploy]: Installing Pods..."
+        pod install
+    - name: Resolve Package Dependencies
+      if: inputs.resolve-package-dependencies == 'true'
+      shell: bash
+      run: |
+        echo "[XCode-Deploy]: Resolving Package Dependencies..."
+        xcodebuild -resolvePackageDependencies -clonedSourcePackagesDirPath .
     - name: Setup Scheme
       shell: bash
       run: |
@@ -112,15 +140,14 @@ runs:
     - name: Select Xcode
       uses: maxim-lobanov/setup-xcode@v1.4.1
       with:
-        xcode-version: '14.0'
+        xcode-version: ${{ inputs.xcode-version }}
     - name: Increment Build Number
       shell: bash
+      if: inputs.update-build == 'true'
       run: |
-        if ${{ inputs.update-build }}; then
           echo "[XCode-Deploy]: Updating Build Number to commit depth..."
           count=`git rev-list --count HEAD`
           xcrun agvtool new-version -all $count
-        fi
     - name: Build and Archive
       uses: sersoft-gmbh/xcodebuild-action@v2
       with:
