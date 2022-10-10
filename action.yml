@@ -101,12 +101,12 @@ runs:
         echo "FILE_TO_BUILD=$file_to_build" >> $GITHUB_ENV
         echo "PROJECT_NAME=$(echo "$file_to_build" | cut -f 1 -d '.')" >> $GITHUB_ENV
     - name: Setup Pods
-      if: ${{ inputs.install-pods }}
+      if: inputs.install-pods == true
       shell: bash
       run: |
         pod install
     - name: Resolve Package Dependencies
-      if: ${{ inputs.resolve-package-dependencies }}
+      if: inputs.resolve-package-dependencies == true
       shell: bash
       run: |
         xcodebuild -resolvePackageDependencies -clonedSourcePackagesDirPath .
