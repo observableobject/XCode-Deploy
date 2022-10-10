@@ -30,6 +30,22 @@ inputs:
     options:
     - true
     - false
+  install-pods: 
+    description: 'Run Pod Install'
+    required: true
+    default: false
+    type: choice
+    options:
+    - true
+    - false
+  resolve-package-dependencies: 
+    description: 'Resolve Package Dependencies'
+    required: true
+    default: false
+    type: choice
+    options:
+    - true
+    - false
   distribution-certificate-p12:
     description: 'base64 representation of the distribution certificate.'
     required: true
@@ -84,6 +100,14 @@ runs:
         echo "TYPE=$filetype_parameter" >> $GITHUB_ENV
         echo "FILE_TO_BUILD=$file_to_build" >> $GITHUB_ENV
         echo "PROJECT_NAME=$(echo "$file_to_build" | cut -f 1 -d '.')" >> $GITHUB_ENV
+    - name: Setup Pods
+      if: ${{ inputs.install-pods }}
+      run: |
+        bundle exec pod install
+    - name: Resolve Package Dependencies
+      if: ${{ inputs.resolve-package-dependencies }}
+      run: |
+        xcodebuild -resolvePackageDependencies -clonedSourcePackagesDirPath .
     - name: Setup Scheme
       shell: bash
       run: |
