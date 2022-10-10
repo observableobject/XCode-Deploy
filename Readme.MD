@@ -1,4 +1,4 @@
-# XCode-Deploy 1.4
+# XCode-Deploy 1.5
 This action will archive, export, and upload your project or workspace to App Store Connect (TestFlight). 
 It is designed to run on a containerized VM, such as a GitHub Hosted Runner.
 If self-hosting, some of these steps may be unnecessary or redundant. 
@@ -24,6 +24,14 @@ The path to the `ExportOptions.plist` file, required for `-exportArchive`. Will 
 ### `update-build`
 
 A boolean value that will set the `version-number` to the commit depth.  If false, nothing happens. See also `agvtool`'s `-new-version`.
+
+### `install-pods`
+
+A boolean value that will run `pod install` if true.  If false, nothing happens.
+
+### `resolve-package-dependencies`
+
+A boolean value that will run `xcodebuild -resolvePackageDependencies -clonedSourcePackagesDirPath .` if true.  If false, nothing happens.
 
 ### `distribution-certificate-p12`
 
@@ -55,13 +63,15 @@ You can generate one of these by doing a local export in XCode and then copy it 
 ## Sample Usage
 ```yml
 - name: Deploy
-  uses: vfrascello/xcode-deploy@v1.4
+  uses: vfrascello/xcode-deploy@v1.5
   with:
     xcode-version: '14.0'
     configuration: 'Release'
     scheme: 'MyScheme'
     path-to-export-options: 'ExportOptions.plist'
     update-build: true
+    install-pods: false
+    resolve-package-dependencies: true
     distribution-certificate-p12: ${{ secrets.DISTRIBUTION_CERTIFICATE_P12 }}
     distribution-certificate-password: ${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}
     app-store-provisioning-profile: ${{ secrets.APPSTORE_PROVISIONING_PROFILE}}
