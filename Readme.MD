@@ -22,6 +22,14 @@ The scheme to archive. If left blank, the action will search the project or work
 
 The path to the `ExportOptions.plist` file, required for `-exportArchive`. Will default to `ExportOptions.plist` in the `${{ github.workspace }}` directory. See also `xcodebuild`'s `-exportArchive`.
 
+### `json-for-plist-updates`
+
+JSON string structured as an array of key/value pairs.  If left empty, the plist update action portion of the action will not run.
+
+### `path-to-info-plist`
+
+The path to the `Info.plist` file.  If left empty, the plist update action portion of the action will not run.
+
 ### `update-build`
 
 A boolean value that will set the `version-number` to the commit depth.  If false, nothing happens. See also `agvtool`'s `-new-version`.
