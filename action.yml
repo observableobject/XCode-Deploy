@@ -22,6 +22,12 @@ inputs:
     description: 'Relative path and filename to ExportOptions.plist'
     required: true
     default: 'ExportOptions.plist'
+  json-for-plist-updates:
+    description: 'JSON structured to contain an array of key/value pairs'
+    required: false
+  path-to-info-plist:
+    description: 'Relative path and filename to Info.plist'
+    required: false
   update-build: 
     description: 'Sets Build Number to # of commits.'
     required: true
@@ -126,6 +132,14 @@ runs:
           scheme=${{ inputs.scheme }}
         fi
         echo "SCHEME=$scheme" >> $GITHUB_ENV
+    - name: Update Plist
+      uses: dppeak/update-ios-plist-action
+      if: |
+        inputs.path-to-info-plist != '' &&
+        inputs.json-for-plist-updates != ''
+      with:
+        info-plist-path: ${{ inputs.path-to-info-plist }}
+        key-value-json: ${{ inputs.json-for-plist-updates }}
     - name: Import Certificates
       uses: apple-actions/import-codesign-certs@v1
       id: codesign
