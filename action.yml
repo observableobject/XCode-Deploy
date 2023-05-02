@@ -22,11 +22,11 @@ inputs:
     description: 'Relative path and filename to ExportOptions.plist'
     required: true
     default: 'ExportOptions.plist'
-  json-for-plist-updates:
-    description: 'JSON structured to contain an array of key/value pairs'
-    required: false
   path-to-info-plist:
     description: 'Relative path and filename to Info.plist'
+    required: false
+  json-for-plist-updates:
+    description: 'JSON structured to contain an array of key/value pairs'
     required: false
   update-build: 
     description: 'Sets Build Number to # of commits.'
