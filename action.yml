@@ -133,7 +133,7 @@ runs:
         fi
         echo "SCHEME=$scheme" >> $GITHUB_ENV
     - name: Update Plist
-      uses: dppeak/update-ios-plist-action
+      uses: dppeak/update-ios-plist-action@v1.1.0
       if: |
         inputs.path-to-info-plist != '' &&
         inputs.json-for-plist-updates != ''
