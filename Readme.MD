@@ -78,6 +78,8 @@ You can generate one of these by doing a local export in XCode and then copy it 
     configuration: 'Release'
     scheme: 'MyScheme'
     path-to-export-options: 'ExportOptions.plist'
+    json-for-plist-updates: '[{"FirstCustomKey": "Some new Value"}, {"SecondCustomKey": "Another Value"}]'
+    path-to-info-plist: 'Info.plist'
     update-build: true
     install-pods: false
     resolve-package-dependencies: true
@@ -105,6 +107,8 @@ This composite action was written by me, Vincent Frascello, but uses actions by 
 
 [Github Actions Team][5]
 
+[David Peak][7]
+
 ## License
 Any contributions made under this project will be governed by the [MIT License][6].
 
@@ -115,3 +119,4 @@ Any contributions made under this project will be governed by the [MIT License][
 [4]: https://github.com/akiojin
 [5]: https://github.com/actions
 [6]: https://github.com/vfrascello/xcode-deploy/blob/main/LICENSE
+[7]: https://github.com/dppeak
