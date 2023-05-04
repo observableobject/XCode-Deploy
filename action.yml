@@ -1,20 +1,20 @@
 name: 'XCode-Deploy-With-Secrets'
 description: 'Archive, Export, and Upload a build to App Store Connect (TestFlight)'
 author: 'David Peak with original by Vincent Frascello'
-branding: 
+branding:
   icon: 'upload-cloud'
   color: 'yellow'
-  
+
 inputs:
-  xcode-version: 
+  xcode-version:
     description: 'The version of XCode to use. Defaults to the latest stable version.'
     requred: false
     default: 'latest-stable'
-  configuration: 
+  configuration:
     description: 'Configuration (default: Release)'
     required: true
     default: 'Release'
-  scheme: 
+  scheme:
     description: 'Leave blank and Action will search for default scheme.'
     required: false
     default: ''
@@ -28,7 +28,7 @@ inputs:
   json-for-secrets:
     description: 'JSON structured as a group of variables and values.'
     required: false
-  update-build: 
+  update-build:
     description: 'Sets Build Number to # of commits.'
     required: true
     default: true
@@ -36,7 +36,7 @@ inputs:
     options:
     - true
     - false
-  install-pods: 
+  install-pods:
     description: 'Run Pod Install'
     required: false
     default: false
@@ -44,7 +44,7 @@ inputs:
     options:
     - true
     - false
-  resolve-package-dependencies: 
+  resolve-package-dependencies:
     description: 'Resolve Package Dependencies'
     required: true
     default: false
@@ -60,7 +60,7 @@ inputs:
     required: true
   app-store-provisioning-profile:
     description: 'base64 representation of the provisioning profile.'
-    required: true    
+    required: true
   auth-key-id:
     description: 'App Store Connect API Auth Key ID.'
     required: true
@@ -71,7 +71,7 @@ inputs:
     description: 'base64 representation of the App Store Connect AuthKey.'
     required: true
 
-runs: 
+runs:
   using: 'composite'
   steps:
     - name: Sanitize input
@@ -127,7 +127,7 @@ runs:
           scheme=$(echo $scheme_list | ruby -e "require 'json'; puts JSON.parse(STDIN.gets)['project']['targets'][0]")
           echo $scheme | cat >scheme
           echo "[XCode-Deploy-With-Secrets]: Using default scheme: $scheme..."
-        else 
+        else
           echo "[XCode-Deploy-With-Secrets]: Using provided Scheme: ${{ inputs.scheme }}"
           scheme=${{ inputs.scheme }}
         fi
@@ -144,7 +144,7 @@ runs:
       with:
         base64: ${{ inputs.app-store-provisioning-profile }}
     - name: Select Xcode
-      uses: maxim-lobanov/setup-xcode@v1.4.1
+      uses: maxim-lobanov/setup-xcode@v1.5.1
       with:
         xcode-version: ${{ inputs.xcode-version }}
     - name: Increment Build Number
@@ -157,7 +157,7 @@ runs:
     - name: Write Secrets to JSON File
       shell: bash
       if: inputs.path-to-secrets != '' && inputs.json-for-secrets != ''
-      run |
+      run: |
         echo "[XCode-Deploy-With-Secrets]: Writing secrets to file..."
         echo ${{ inputs.json-for-secrets }} >> ${{ inputs.path-to-secrets }}
     - name: Build and Archive
@@ -172,7 +172,7 @@ runs:
         derived-data-path: build/derivedData
         destination: generic/platform=iOS
         configuration: ${{ inputs.configuration }}
-    - name: Get App Store Connect API Key 
+    - name: Get App Store Connect API Key
       uses: timheuer/base64-to-file@v1.1
       with:
         fileName: AuthKey_${{ inputs.auth-key-id }}.p8
@@ -195,7 +195,7 @@ runs:
         echo "[XCode-Deploy-With-Secrets]: Uploading archive using altool..."
         xcrun altool --upload-app -f ${{ github.workspace }}/${{ env.PROJECT_NAME }}.ipa -t iOS \
         --apiIssuer ${{ inputs.auth-key-issuer-id }} --apiKey ${{ inputs.auth-key-id }}
-    - name: Cleanup 
+    - name: Cleanup
       shell: bash
       run: |
         echo "[XCode-Deploy-With-Secrets]: Removing Keychain and private_keys folder..."
