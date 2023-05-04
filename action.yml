@@ -1,6 +1,6 @@
 name: 'XCode-Deploy-With-Secrets'
 description: 'Archive, Export, and Upload a build to App Store Connect (TestFlight)'
-author: 'Vincent Frascello'
+author: 'David Peak with original by Vincent Frascello'
 branding: 
   icon: 'upload-cloud'
   color: 'yellow'
@@ -38,7 +38,7 @@ inputs:
     - false
   install-pods: 
     description: 'Run Pod Install'
-    required: true
+    required: false
     default: false
     type: choice
     options:
