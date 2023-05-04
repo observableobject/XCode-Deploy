@@ -1,4 +1,4 @@
-name: 'XCode-Deploy'
+name: 'XCode-Deploy-With-Secrets'
 description: 'Archive, Export, and Upload a build to App Store Connect (TestFlight)'
 author: 'Vincent Frascello'
 branding: 
@@ -22,11 +22,11 @@ inputs:
     description: 'Relative path and filename to ExportOptions.plist'
     required: true
     default: 'ExportOptions.plist'
-  path-to-info-plist:
-    description: 'Relative path and filename to Info.plist'
+  path-to-secrets:
+    description: 'Relative path and filename to secrets.json'
     required: false
-  json-for-plist-updates:
-    description: 'JSON structured to contain an array of key/value pairs'
+  json-for-secrets:
+    description: 'JSON structured as a group of variables and values.'
     required: false
   update-build: 
     description: 'Sets Build Number to # of commits.'
@@ -81,7 +81,7 @@ runs:
         CONFIGURATION: ${{ inputs.configuration }}
         PATH_TO_EXPORT_OPTIONS: ${{ inputs.path-to-export-options }}
       run: |
-        echo "[XCode-Deploy]: Checking Input for invalid characters..."
+        echo "[XCode-Deploy-With-Secrets]: Checking Input for invalid characters..."
         if [[ "$SCHEME" == ${SCHEME//[^a-zA-Z0-9_\.- ]/} ]] && \
         [[ "$CONFIGURATION" == ${CONFIGURATION//[^a-zA-Z0-9_\.- ]/} ]] && \
         [[ "$PATH_TO_EXPORT_OPTIONS" == ${PATH_TO_EXPORT_OPTIONS//^[a-zA-Z0-9](?:[a-zA-Z0-9 ._-]*[a-zA-Z0-9])?\.[a-zA-Z0-9_-]+$/} ]]; then
@@ -98,7 +98,7 @@ runs:
     - name: Determine File To Build
       shell: bash
       run: |
-        echo "[XCode-Deploy]: Determining file to build..."
+        echo "[XCode-Deploy-With-Secrets]: Determining file to build..."
         if [ "`ls -A | grep -i \\.xcworkspace\$`" ]; then filetype_parameter="workspace" \
         && file_to_build="`ls -A | grep -i \\.xcworkspace\$`"; \
         else filetype_parameter="project" && file_to_build="`ls -A | grep -i \\.xcodeproj\$`"; fi
@@ -110,34 +110,28 @@ runs:
       if: inputs.install-pods == 'true'
       shell: bash
       run: |
-        echo "[XCode-Deploy]: Installing Pods..."
+        echo "[XCode-Deploy-With-Secrets]: Installing Pods..."
         pod install
     - name: Resolve Package Dependencies
       if: inputs.resolve-package-dependencies == 'true'
       shell: bash
       run: |
-        echo "[XCode-Deploy]: Resolving Package Dependencies..."
+        echo "[XCode-Deploy-With-Secrets]: Resolving Package Dependencies..."
         xcodebuild -resolvePackageDependencies -clonedSourcePackagesDirPath .
     - name: Setup Scheme
       shell: bash
       run: |
-        echo "[XCode-Deploy]: Searching for default Scheme..."
+        echo "[XCode-Deploy-With-Secrets]: Searching for default Scheme..."
         if [ "${{ inputs.scheme }}" == "" ]; then
           scheme_list=$(xcodebuild -list -json | tr -d "\n")
           scheme=$(echo $scheme_list | ruby -e "require 'json'; puts JSON.parse(STDIN.gets)['project']['targets'][0]")
           echo $scheme | cat >scheme
-          echo "[XCode-Deploy]: Using default scheme: $scheme..."
+          echo "[XCode-Deploy-With-Secrets]: Using default scheme: $scheme..."
         else 
-          echo "[XCode-Deploy]: Using provided Scheme: ${{ inputs.scheme }}"
+          echo "[XCode-Deploy-With-Secrets]: Using provided Scheme: ${{ inputs.scheme }}"
           scheme=${{ inputs.scheme }}
         fi
         echo "SCHEME=$scheme" >> $GITHUB_ENV
-    - name: Update Plist
-      uses: dppeak/update-ios-plist-action@v1.1.0
-      if: inputs.path-to-info-plist != '' && inputs.json-for-plist-updates != ''
-      with:
-        info-plist-path: ${{ inputs.path-to-info-plist }}
-        key-value-json: ${{ inputs.json-for-plist-updates }}
     - name: Import Certificates
       uses: apple-actions/import-codesign-certs@v1
       id: codesign
@@ -157,9 +151,15 @@ runs:
       shell: bash
       if: inputs.update-build == 'true'
       run: |
-          echo "[XCode-Deploy]: Updating Build Number to commit depth..."
+          echo "[XCode-Deploy-With-Secrets]: Updating Build Number to commit depth..."
           count=`git rev-list --count HEAD`
           xcrun agvtool new-version -all $count
+    - name: Write Secrets to JSON File
+      shell: bash
+      if: inputs.path-to-secrets != '' && inputs.json-for-secrets != ''
+      run |
+        echo "[XCode-Deploy-With-Secrets]: Writing secrets to file..."
+        echo ${{ inputs.json-for-secrets }} >> ${{ inputs.path-to-secrets }}
     - name: Build and Archive
       uses: sersoft-gmbh/xcodebuild-action@v2
       with:
@@ -181,7 +181,7 @@ runs:
     - name: Export Xcode archive
       shell: bash
       run: |
-        echo "[XCode-Deploy]: Exporting archive using xcodebuild..."
+        echo "[XCode-Deploy-With-Secrets]: Exporting archive using xcodebuild..."
         xcodebuild -exportArchive -verbose \
         -sdk iphoneos \
         -archivePath ${{ github.workspace }}/${{ env.PROJECT_NAME }}.xcarchive  \
@@ -192,12 +192,12 @@ runs:
     - name: Upload to App Store Connect
       shell: bash
       run: |
-        echo "[XCode-Deploy]: Uploading archive using altool..."
+        echo "[XCode-Deploy-With-Secrets]: Uploading archive using altool..."
         xcrun altool --upload-app -f ${{ github.workspace }}/${{ env.PROJECT_NAME }}.ipa -t iOS \
         --apiIssuer ${{ inputs.auth-key-issuer-id }} --apiKey ${{ inputs.auth-key-id }}
     - name: Cleanup 
       shell: bash
       run: |
-        echo "[XCode-Deploy]: Removing Keychain and private_keys folder..."
+        echo "[XCode-Deploy-With-Secrets]: Removing Keychain and private_keys folder..."
         security delete-keychain codesign.keychain
         rm  -rf ${{ github.workspace }}/private_keys || true
