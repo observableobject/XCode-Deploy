@@ -1,5 +1,5 @@
 
-# XCode-Deploy 1.6
+# XCode-Deploy with Secrets 1.6
 This action will archive, export, and upload your project or workspace to App Store Connect (TestFlight). 
 It is designed to run on a containerized VM, such as a GitHub Hosted Runner.
 If self-hosting, some of these steps may be unnecessary or redundant. 
@@ -22,13 +22,13 @@ The scheme to archive. If left blank, the action will search the project or work
 
 The path to the `ExportOptions.plist` file, required for `-exportArchive`. Will default to `ExportOptions.plist` in the `${{ github.workspace }}` directory. See also `xcodebuild`'s `-exportArchive`.
 
-### `path-to-info-plist`
+### `path-to-secrets`
 
-The path to the `Info.plist` file.  If left empty, the plist update action portion of the action will not run.
+The path to the `secrets.json` file.  If left empty, the file creation portion of the action will not run.
 
-### `json-for-plist-updates`
+### `json-for-secrets`
 
-JSON string structured as an array of key/value pairs.  If left empty, the plist update action portion of the action will not run.
+JSON string structured as a list of variables and values.  If left empty, file creation portion of the action will not run.
 
 ### `update-build`
 
@@ -72,14 +72,14 @@ You can generate one of these by doing a local export in XCode and then copy it 
 ## Sample Usage
 ```yml
 - name: Deploy
-  uses: vfrascello/xcode-deploy@v1.6
+  uses: dppeak/xcode-deploy-with-secrets@v1.0
   with:
     xcode-version: '14.0'
     configuration: 'Release'
     scheme: 'MyScheme'
     path-to-export-options: 'ExportOptions.plist'
-    path-to-info-plist: 'Info.plist'
-    json-for-plist-updates: '[{"FirstCustomKey": "Some new Value"}, {"SecondCustomKey": "Another Value"}]'
+    path-to-secrets: './somePath/secrets.json'
+    json-for-secrets: '[{"FirstCustomKey": "Some new Value"}, {"SecondCustomKey": "Another Value"}]'
     update-build: true
     install-pods: false
     resolve-package-dependencies: true
@@ -95,7 +95,7 @@ See [action.yml][1] for more details.
 
 ## Contributions
 
-This composite action was written by me, Vincent Frascello, but uses actions by other open-source contributors: 
+The original composite action was written by Vincent Frascello, but uses actions by other open-source contributors: 
 
 [Maxim Lobanov][0]
 
