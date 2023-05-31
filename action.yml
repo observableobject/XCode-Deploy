@@ -1,6 +1,6 @@
-name: 'XCode-Deploy'
+name: 'testflight-deploy'
 description: 'Archive, Export, and Upload a build to App Store Connect (TestFlight)'
-author: 'Vincent Frascello'
+author: 'dotswift'
 branding: 
   icon: 'upload-cloud'
   color: 'yellow'
